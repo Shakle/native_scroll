@@ -3,8 +3,8 @@ library native_scroll;
 
 import 'package:flutter/widgets.dart';
 import 'package:js/js.dart';
-import 'dart:html';
-import 'dart:ui' as ui;
+import 'package:web/web.dart';
+import 'dart:ui_web' as ui_web;
 
 class NativeScrollBuilder extends StatefulWidget {
   final Widget Function(BuildContext context, ScrollController controller)
@@ -25,7 +25,7 @@ class _NativeScrollBuilderState extends State<NativeScrollBuilder> {
   late String _viewId;
   late ScrollController _scrollController;
 
-  final _heightDiv = DivElement();
+  final _heightDiv = HTMLDivElement();
 
   @override
   void initState() {
@@ -34,21 +34,20 @@ class _NativeScrollBuilderState extends State<NativeScrollBuilder> {
     _globalId++;
     _viewId = 'native-scroll-view-$_globalId';
 
-    ui.platformViewRegistry.registerViewFactory(
+    ui_web.platformViewRegistry.registerViewFactory(
       _viewId,
       (_) {
         // Create a scroll container - this is a <div> with scrolling overflow.
         // When it scroll, the Flutter ScrollController gets updated.
-        return DivElement()
+        return HTMLDivElement()
           ..id = _viewId
           ..style.overflow = 'scroll'
           ..style.width = '100%'
           ..style.height = '100%'
           // We need to cancel scroll events to stop them getting to Flutter
           ..onWheel.listen((event) => event.stopPropagation())
-          ..onMouseWheel.listen((event) => event.stopPropagation())
           ..onScroll.listen((event) {
-            final target = event.target as DivElement;
+            final target = event.target as HTMLDivElement;
             _onNativeScroll(target.scrollTop);
           })
           ..append(_heightDiv);
@@ -57,7 +56,7 @@ class _NativeScrollBuilderState extends State<NativeScrollBuilder> {
 
     _scrollController.addListener(_onFlutterScroll);
 
-    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) async {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       _setScrollHeight();
 
       _scrollController.position.addListener(() {
@@ -71,12 +70,12 @@ class _NativeScrollBuilderState extends State<NativeScrollBuilder> {
     // We need to update our shadow HTML scrolling elements
     _setScrollHeight();
 
-    _heightDiv.scrollTop = _scrollController.position.pixels.toInt();
+    _heightDiv.scrollTop = _scrollController.position.pixels;
   }
 
-  void _onNativeScroll(int scrollTop) {
+  void _onNativeScroll(double scrollTop) {
     // There was a scroll in HTML land, update Flutter
-    _scrollController.jumpTo(scrollTop.toDouble());
+    _scrollController.jumpTo(scrollTop);
   }
 
   double? _lastScrollHeight;
