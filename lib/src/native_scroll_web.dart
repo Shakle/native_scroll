@@ -1,8 +1,4 @@
-@JS()
-library native_scroll;
-
 import 'package:flutter/widgets.dart';
-import 'package:js/js.dart';
 import 'package:web/web.dart';
 import 'dart:ui_web' as ui_web;
 
