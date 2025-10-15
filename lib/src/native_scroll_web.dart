@@ -62,6 +62,14 @@ class _NativeScrollBuilderState extends State<NativeScrollBuilder> {
     });
   }
 
+  @override
+  void didUpdateWidget(covariant NativeScrollBuilder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // After a rebuild (e.g., Bloc emits new state and content size changes),
+    // schedule height sync once layout is complete.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _setScrollHeight());
+  }
+
   void _onFlutterScroll() {
     // There was a scroll in Flutter (e.g. scrollController.jumpTo called)
     // We need to update our shadow HTML scrolling elements
@@ -101,9 +109,16 @@ class _NativeScrollBuilderState extends State<NativeScrollBuilder> {
     return Stack(
       children: [
         HtmlElementView(viewType: _viewId),
-        ScrollConfiguration(
-          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-          child: widget.builder(context, _scrollController),
+        NotificationListener<ScrollMetricsNotification>(
+          onNotification: (notification) {
+            // Fires when viewportDimension/maxScrollExtent change (e.g., list grows).
+            _setScrollHeight();
+            return false; // allow other listeners to receive it
+          },
+          child: ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+            child: widget.builder(context, _scrollController),
+          ),
         ),
       ],
     );
